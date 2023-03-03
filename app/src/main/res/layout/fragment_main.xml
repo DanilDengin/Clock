@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".mainFragment.MainFragment"
+    android:orientation="vertical"
+    android:gravity="center">
+
+
+    <Button
+        android:id="@+id/themeButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Set theme"
+        android:layout_marginHorizontal="20dp"/>
+
+    <Button
+        android:id="@+id/timeButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Check time"
+        android:layout_marginTop="20dp"
+        android:layout_marginHorizontal="20dp"/>
+</LinearLayout>

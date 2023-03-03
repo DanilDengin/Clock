@@ -1,0 +1,25 @@
+<RadioGroup xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/radioGroupThemePicker"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    tools:context=".themePickerFragment.ThemePickerFragment">
+
+    <RadioButton
+        android:id="@+id/radioButtonSystemTheme"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="System theme" />
+
+    <RadioButton
+        android:id="@+id/radioButtonLightTheme"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Light theme" />
+
+    <RadioButton
+        android:id="@+id/radioButtonNightTheme"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Night theme" />
+</RadioGroup>

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="ClockView">
+        <attr name="clockColor" format="color" />
+        <attr name="secondHandColor" format="color" />
+        <attr name="clockRadius" format="dimension" />
+        <attr name="clockNumberSize" format="dimension" />
+    </declare-styleable>
+
+    <attr name="clockViewStyle" format="reference" />
+
+    <style name="ClockViewStyle">
+        <item name="clockColor">@color/black</item>
+        <item name="secondHandColor">@color/red</item>
+    </style>
+</resources>
