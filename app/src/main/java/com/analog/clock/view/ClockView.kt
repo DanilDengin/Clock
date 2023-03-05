@@ -6,6 +6,8 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Rect
+import android.os.Handler
+import android.os.Looper
 import android.os.Parcelable
 import android.util.AttributeSet
 import android.util.Log
@@ -41,6 +43,8 @@ class ClockView @JvmOverloads constructor(
         const val HOURS_HAND_SCALE = 0.5f
         const val HAND_SCALE = 0.75f
         const val TEXT_SIZE_SCALE = 1 / 15F
+        const val DIVIDER_SCALE = 1 / 1.1F
+        const val NUMBERS_SCALE = 1 / 1.3F
         const val INVALIDATE_DELAY_TIME = 500L
     }
 
@@ -65,17 +69,14 @@ class ClockView @JvmOverloads constructor(
     }
     private val cachedCanvas: Canvas by lazy(LazyThreadSafetyMode.NONE) { Canvas(cachedBitmap) }
 
-    private val paintStrokeBrush: Paint by lazy(LazyThreadSafetyMode.NONE) {
-        Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            style = Paint.Style.STROKE
-        }
-    }
+    private val paintStrokeBrush: Paint =
+        Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE }
 
-    private val paintFillBrush: Paint by lazy(LazyThreadSafetyMode.NONE) {
-        Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            style = Paint.Style.FILL
-        }
-    }
+
+    private val paintFillBrush: Paint =
+        Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
+
+    private val invalidateHandler = Handler(Looper.getMainLooper())
 
     init {
         attrs?.also { initAttrs(it, defStyleRes) }
@@ -114,7 +115,6 @@ class ClockView @JvmOverloads constructor(
     }
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
-        super.onMeasure(widthMeasureSpec, heightMeasureSpec)
         val width = clockRadius * 2
         val height = clockRadius * 2
         setMeasuredDimension(
@@ -125,20 +125,18 @@ class ClockView @JvmOverloads constructor(
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-        when (initDrawing) {
-            false -> {
-                canvas.drawBitmap(cachedBitmap, 0f, 0f, null)
-                drawClock(cachedCanvas)
-                drawHands(canvas)
-                initDrawing = true
-            }
-            true -> {
-                canvas.drawBitmap(cachedBitmap, 0f, 0f, null)
-                drawHands(canvas)
-            }
+        if (initDrawing.not()) {
+            canvas.drawBitmap(cachedBitmap, 0f, 0f, null)
+            drawClock(cachedCanvas)
+            drawHands(canvas)
+            initDrawing = true
+        } else {
+            canvas.drawBitmap(cachedBitmap, 0f, 0f, null)
+            drawHands(canvas)
         }
         postInvalidateDelayed(INVALIDATE_DELAY_TIME)
     }
+
 
     private fun drawClock(canvas: Canvas) {
         paintStrokeBrush.apply {
@@ -176,14 +174,11 @@ class ClockView @JvmOverloads constructor(
     }
 
     private fun updateDate() {
-        when (savedTime) {
-            0L -> {
-                calendar.timeInMillis = System.currentTimeMillis()
-            }
-            else -> {
-                calendar.timeInMillis = savedTime
-                savedTime = 0
-            }
+        if (savedTime == 0L) {
+            calendar.timeInMillis = System.currentTimeMillis()
+        } else {
+            calendar.timeInMillis = savedTime
+            savedTime = 0
         }
     }
 
@@ -242,8 +237,8 @@ class ClockView @JvmOverloads constructor(
             val num = hour.toString()
             paintFillBrush.getTextBounds(num, 0, num.length, rect)
             val angle = Math.PI / 6 * (hour - 3)
-            val x = (centerX + (cos(angle) * clockRadius - rect.width()) / 1.3).toFloat()
-            val y = (centerY + (sin(angle) * clockRadius + rect.height()) / 1.3).toFloat()
+            val x = (centerX + (cos(angle) * clockRadius - rect.width()) * NUMBERS_SCALE).toFloat()
+            val y = (centerY + (sin(angle) * clockRadius + rect.height()) * NUMBERS_SCALE).toFloat()
             canvas.drawText(num, x, y, paintFillBrush)
             paintFillBrush.apply {
                 strokeWidth = DIVIDER_BRUSH_STROKE_WIDTH
@@ -252,8 +247,8 @@ class ClockView @JvmOverloads constructor(
             canvas.drawLine(
                 (centerX + cos(angle) * clockRadius).toFloat(),
                 (centerY + sin(angle) * clockRadius).toFloat(),
-                (centerX + cos(angle) * clockRadius / 1.1).toFloat(),
-                (centerY + sin(angle) * clockRadius / 1.1).toFloat(),
+                (centerX + cos(angle) * clockRadius * DIVIDER_SCALE).toFloat(),
+                (centerY + sin(angle) * clockRadius * DIVIDER_SCALE).toFloat(),
                 paintFillBrush
             )
         }
@@ -288,7 +283,7 @@ class ClockView @JvmOverloads constructor(
     }
 
     override fun onRestoreInstanceState(state: Parcelable?) {
-        state as SavedState
+        if (state !is SavedState) return super.onRestoreInstanceState(state)
         super.onRestoreInstanceState(state.superState)
         savedTime = state.savedTime
     }
