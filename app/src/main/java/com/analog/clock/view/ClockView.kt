@@ -6,8 +6,6 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Rect
-import android.os.Handler
-import android.os.Looper
 import android.os.Parcelable
 import android.util.AttributeSet
 import android.util.Log
@@ -75,8 +73,6 @@ class ClockView @JvmOverloads constructor(
 
     private val paintFillBrush: Paint =
         Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
-
-    private val invalidateHandler = Handler(Looper.getMainLooper())
 
     init {
         attrs?.also { initAttrs(it, defStyleRes) }
