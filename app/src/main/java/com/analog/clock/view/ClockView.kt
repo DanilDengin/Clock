@@ -1,6 +1,7 @@
 package com.analog.clock.view
 
 import android.content.Context
+import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
@@ -40,10 +41,11 @@ class ClockView @JvmOverloads constructor(
         const val HOURS_HAND_SCALE = 0.5f
         const val HAND_SCALE = 0.75f
         const val TEXT_SIZE_SCALE = 1 / 15F
+        const val INVALIDATE_DELAY_TIME = 500L
     }
 
     private val hourNumbers = listOf(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12)
-    private val mRect = Rect()
+    private val rect = Rect()
     private var clockRadius = 0f
     private var centerX = 0f
     private var centerY = 0f
@@ -52,6 +54,16 @@ class ClockView @JvmOverloads constructor(
     private var clockColor = 0
     private var secondHandColor = 0
     private var clockNumberSize = 0f
+    private val calendar = Calendar.getInstance()
+    private var savedTime: Long = 0
+    private var initDrawing = false
+    private val cachedBitmap: Bitmap by lazy(LazyThreadSafetyMode.NONE) {
+        Bitmap.createBitmap(
+            width, height,
+            Bitmap.Config.ARGB_8888
+        )
+    }
+    private val cachedCanvas: Canvas by lazy(LazyThreadSafetyMode.NONE) { Canvas(cachedBitmap) }
 
     private val paintStrokeBrush: Paint by lazy(LazyThreadSafetyMode.NONE) {
         Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -113,9 +125,19 @@ class ClockView @JvmOverloads constructor(
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-        drawClock(canvas)
-        drawHands(canvas)
-        postInvalidateDelayed(500)
+        when (initDrawing) {
+            false -> {
+                canvas.drawBitmap(cachedBitmap, 0f, 0f, null)
+                drawClock(cachedCanvas)
+                drawHands(canvas)
+                initDrawing = true
+            }
+            true -> {
+                canvas.drawBitmap(cachedBitmap, 0f, 0f, null)
+                drawHands(canvas)
+            }
+        }
+        postInvalidateDelayed(INVALIDATE_DELAY_TIME)
     }
 
     private fun drawClock(canvas: Canvas) {
@@ -138,12 +160,11 @@ class ClockView @JvmOverloads constructor(
             POINT_CENTER_RADIUS,
             paintFillBrush
         )
-
         drawNumbers(canvas)
     }
 
     private fun drawHands(canvas: Canvas) {
-        val calendar = Calendar.getInstance()
+        updateDate()
         val hours = calendar.get(Calendar.HOUR_OF_DAY)
         val correctHours = if (hours > 12) hours - 12 else hours
         val minutes = calendar.get(Calendar.MINUTE)
@@ -151,6 +172,19 @@ class ClockView @JvmOverloads constructor(
         drawHourHand((correctHours + minutes / 60.0) * 5f, canvas)
         drawMinuteHand(minutes, canvas)
         drawSecondHand(seconds, canvas)
+
+    }
+
+    private fun updateDate() {
+        when (savedTime) {
+            0L -> {
+                calendar.timeInMillis = System.currentTimeMillis()
+            }
+            else -> {
+                calendar.timeInMillis = savedTime
+                savedTime = 0
+            }
+        }
     }
 
     private fun drawHourHand(hours: Double, canvas: Canvas) {
@@ -206,10 +240,10 @@ class ClockView @JvmOverloads constructor(
         }
         hourNumbers.forEach { hour ->
             val num = hour.toString()
-            paintFillBrush.getTextBounds(num, 0, num.length, mRect)
+            paintFillBrush.getTextBounds(num, 0, num.length, rect)
             val angle = Math.PI / 6 * (hour - 3)
-            val x = (centerX + (cos(angle) * clockRadius - mRect.width()) / 1.3).toFloat()
-            val y = (centerY + (sin(angle) * clockRadius + mRect.height()) / 1.3).toFloat()
+            val x = (centerX + (cos(angle) * clockRadius - rect.width()) / 1.3).toFloat()
+            val y = (centerY + (sin(angle) * clockRadius + rect.height()) / 1.3).toFloat()
             canvas.drawText(num, x, y, paintFillBrush)
             paintFillBrush.apply {
                 strokeWidth = DIVIDER_BRUSH_STROKE_WIDTH
@@ -240,31 +274,28 @@ class ClockView @JvmOverloads constructor(
         centerY = clockRadius
         hourHandSize = clockRadius * HOURS_HAND_SCALE
         handSize = clockRadius * HAND_SCALE
+        initDrawing = false
         requestLayout()
         invalidate()
     }
 
-    private fun setTime() {
-
+    override fun onSaveInstanceState(): Parcelable {
+        val state = super.onSaveInstanceState()
+        return SavedState(
+            calendar.timeInMillis,
+            state
+        )
     }
 
-//    override fun onSaveInstanceState(): Parcelable {
-//        val state = super.onSaveInstanceState()
-//        return SavedState(
-//            time,
-//            state
-//        )
-//    }
-//
-//    override fun onRestoreInstanceState(state: Parcelable?) {
-//        state as SavedState
-//        super.onRestoreInstanceState(state.superState)
-//        setTime(state.time)
-//    }
+    override fun onRestoreInstanceState(state: Parcelable?) {
+        state as SavedState
+        super.onRestoreInstanceState(state.superState)
+        savedTime = state.savedTime
+    }
 
     @Parcelize
     class SavedState(
-        val time: Long,
+        val savedTime: Long,
         @IgnoredOnParcel val source: Parcelable? = null
     ) : BaseSavedState(source)
 }

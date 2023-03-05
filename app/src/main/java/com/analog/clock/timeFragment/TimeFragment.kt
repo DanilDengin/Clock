@@ -13,17 +13,9 @@ import com.analog.clock.view.ClockView
 
 class TimeFragment : Fragment(R.layout.fragment_time) {
 
-    private val binding by viewBinding(FragmentTimeBinding::bind)
-
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         val clock = view.findViewById(R.id.clockView) as ClockView
-        binding.radioGroupTimePicker.setOnCheckedChangeListener { _, checkedId ->
-            when (checkedId) {
-                R.id.radioButtonBigSizeClock -> clock.setClockRadius(180f)
-                R.id.radioButtonMediumSizeClock -> clock.setClockRadius(130f)
-                R.id.radioButtonSmallSizeClock -> clock.setClockRadius(80f)
-            }
-        }
+        clock.setClockRadius(1f)
     }
 }
